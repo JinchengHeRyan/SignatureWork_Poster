@@ -1,0 +1,17 @@
+# Mac files
+.DS_Store
+
+# Editor files
+.idea/
+
+# Tex files
+*.aux
+*.bbl
+*.blg
+*.log
+*.nav
+*.out
+*.pdf
+*.snm
+*.toc
+*.gz
