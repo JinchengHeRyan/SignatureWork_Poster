@@ -15,3 +15,5 @@
 *.snm
 *.toc
 *.gz
+
+!Final_submission/JinchengHePoster.pdf
