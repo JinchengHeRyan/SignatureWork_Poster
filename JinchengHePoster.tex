@@ -14,7 +14,7 @@
 
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
-\usepackage[size=custom,width=91.44,height=121.92,scale=1.42]{beamerposter}
+\usepackage[size=custom,width=100,height=150,scale=1.42]{beamerposter}
 \usetheme{gemini}
 \usecolortheme{uchicago}
 \usepackage{graphicx}
@@ -22,6 +22,7 @@
 \usepackage{tikz}
 \usepackage{pgfplots}
 \usepackage{cite}
+\usepackage{stackengine}
 %\usepackage[UTF8]{ctex}
 \pgfplotsset{compat=1.17}
 
@@ -108,7 +109,17 @@
                     The task of pitch extraction, or pitch tracking has a long history. There are multiple signal processing based methods to extract pitches. A time domain signal processing method is proposed in~\cite{yin} to estimate the foundamental frequency.
                     A frequency-domain signal processing method is proposed in~\cite{swipe}.
 
-                    Before the usage of DNN methods for extracting pitches, there are some traditional signal processing methods, and although they have the advantage that the algorithms are easy to understand and do not
+                    Before the usage of DNN methods for extracting pitches, there are some traditional signal processing methods, and although they have the advantage that the algorithms are easy to understand and do not require training data, they have limitations in terms of accuracy especially in complex environments. Hence, many machine learning based algorithms were developed.
+                    A supervised machine learning based algorithm based in the time domain is proposed in~\cite{crepe}.
+                    A self-supervised machine learning based algorithm in the frequency domain is proposed in~\cite{spice}.
+                    Using pitch information to help speech separation task also attracts a lot of attention in recent years.
+                    A pitch extraction module is concatenated with the separation module together to perform the separation task in~\cite{pitch_aware}.
+                    A serial model is built and design the final loss as a weighted loss with the speech separation loss and pitch loss in~\cite{serial}. However the serial model in~\cite{serial} needs to go through the target speaker extraction first and then perform the pitch tracking after the extraction.
+                    In our paper, we propose a target speaker pitch extraction module which can directly estimate the target speaker's pitch from a mixture of utterances from multiple speakers.
+                    Then we explore the strategies on how to contribute this target speaker's pitch information to the target speaker separation task.
+                    We propose a small scale Multi-Block RNNoise (MBRNN) model as our baseline speech separation system.
+                    Then we propose two training strategies, namely concatenation training and joint training.
+                    We further implement these two strategies on multiple models with different scales and the experiment results show that the joint training of the target pitch extraction model and the target speaker separation model is useful to improve the separation performance.
                 \end{block}
 
             \end{column}
@@ -117,12 +128,8 @@
 
             \begin{column}{\colwidth}
                 \begin{block}{}
-                    require training data, they have limitations in terms of accuracy especially in complex environments. Hence, many machine learning based algorithms were developed.
-                    A supervised machine learning based algorithm based in the time domain is proposed in~\cite{crepe}.
-                    A self-supervised machine learning based algorithm in the frequency domain is proposed in~\cite{spice}.
-                    Using pitch information to help speech separation task also attracts a lot of attention in recent years.
-                    A pitch extraction module is concatenated with the separation module together to perform the separation task in~\cite{pitch_aware}.
-                    A serial model is built and design the final loss as a weighted loss with the speech separation loss and pitch loss in~\cite{serial}. However the serial model in~\cite{serial} needs to go through the target speaker extraction first and then perform the pitch tracking after the extraction.
+                    The proposed strategies could make positive impact on the TSS task even though the precision of the target pitch extraction is not high enough.
+                    The performance of concatenation with ground-truth pitch information show great potential in utilizing the target speaker's pitch information for the TSS task.
 
                     \begin{figure}[!t]
                         \centering
@@ -131,17 +138,48 @@
                         \label{fig:enc_sep_doc_arc}
                     \end{figure}
 
-                    In our paper, we propose a target speaker pitch extraction module which can directly estimate the target speaker's pitch from a mixture of utterances from multiple speakers.
-                    Then we explore the strategies on how to contribute this target speaker's pitch information to the target speaker separation task.
-                    We propose a small scale Multi-Block RNNoise (MBRNN) model as our baseline speech separation system.
-                    Then we propose two training strategies, namely concatenation training and joint training.
-                    We further implement these two strategies on multiple models with different scales and the experiment results show that the joint training of the target pitch extraction model and the target speaker separation model is useful to improve the separation performance.
-                    The proposed strategies could make positive impact on the TSS task even though the precision of the target pitch extraction is not high enough.
-                    The performance of concatenation with ground-truth pitch information show great potential in utilizing the target speaker's pitch information for the TSS task.
                 \end{block}
 
+
+                \begin{block}{Experiments}
+
+%                    \section{Dataset description}
+                    Our experiments are conducted on the LibriSpeech dataset, and we use the same training and testing tuple as same as Google used in VoiceFilter~\cite{voicefilter}. The mixed utterances are all truncated to 5 seconds in the training stage. We mix the utterances to 0dB in SNR.
+
+
+%                    \section{Target pitch training}
+                    The hidden units of LSTM in the target pitch extraction is set to 300. The window length and hop size are 25ms and 10ms as same as the speech separation model used. And we perform a 512-point STFT on the mixed utterance. To evaluate the pitch extraction ability of our model, we also trained a clean pitch extractor on single speaker clean data. The PR result is shown in Table~\ref{tab:pitch result}.
+
+                    \begin{table}[htbp]
+                        \centering
+                        \begin{tabular}{c|c}
+                            \toprule
+                            Type                                          & PR($\%$) \\
+                            \midrule
+                            Single speaker pitch extraction on clean data & 93.06    \\
+                            \midrule
+                            Target pitch extractor on mixture data        & 70.27    \\
+                            \bottomrule
+                        \end{tabular}
+                        \caption{PR results of different type of pitch extraction models.}
+                        \label{tab:pitch result}
+                    \end{table}
+
+                    A target pitch extraction examples selected from the test set is shown in Figure~\ref{fig:pitch_1}.
+
+                    \begin{figure}[t]
+                        \stackunder[5pt]{\includegraphics[width=\linewidth]{img/pitch.eps}}{(a)}
+                        \stackunder[5pt]{\includegraphics[width=\linewidth]{img/spec_mix.eps}}{(b)}
+                        \stackunder[5pt]{\includegraphics[width=\linewidth]{img/spec_target.eps}}{(c)}
+
+                        \caption{Target pitch extraction result of 2506-11267-0005 item in the test set. (a) Estimated pitch compared with the ground-truth pitch; (b) and (c) Estimated and ground-truth pitch respectively represented on the magnitude spectrogram, only the low frequency part is showed. }
+                        \label{fig:pitch_1}
+                    \end{figure}
+                \end{block}
+
+
                 \begin{block}{Conclusions}
-                    In this paper, we propose the idea that using target speaker's pitch as an auxiliary feature to improve the performance of target speaker separation. A target pitch extraction model is built and the target pitch information is incorporated with the TSS models in both simply concatenation and joint training strategies. We found that the target pitch information could improve the separation performance even though the pitch precision is not high enough yet. While the performance of concatenation with ground-truth pitch information show the great potency of this approach. The joint training approach yields better performance than simple concatenation. We also explore if joint training would bring
+                    In this paper, we propose the idea that using target speaker's pitch as an auxiliary feature to improve the performance of target speaker separation. A target pitch extraction model is built and the target pitch information is incorporated with the TSS models in both simply concatenation and joint training strategies. We found that the target pitch information could improve the separation performance even though the pitch precision is not high enough yet. While the performance of concatenation with ground-truth pitch information show the great potency of this approach. The joint training approach
                 \end{block}
             \end{column}
 
@@ -149,7 +187,7 @@
 
             \begin{column}{\colwidth}
                 \begin{block}{}
-                    improvement to the target pitch extraction, the result shows no obvious help. In the future work, we will continue to improve the precision of target pitch extraction and do more experiments on large scale models to validate the proposed methods.
+                    yields better performance than simple concatenation. We also explore if joint training would bring improvement to the target pitch extraction, the result shows no obvious help. In the future work, we will continue to improve the precision of target pitch extraction and do more experiments on large scale models to validate the proposed methods.
                 \end{block}
                 \begin{block}{References}
 
